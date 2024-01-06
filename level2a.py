@@ -12,10 +12,9 @@ vehiclecap=[]
 for i in data["vehicles"]:
     n_vehicles+=1
     vehiclecap.append(data["vehicles"][i]["capacity"])
-print(vehiclecap)
+#print(vehiclecap)
 quantity=[0 for i in range(n_neighbourhoods)]
 distanceMat=[[0]*(n_neighbourhoods+n_restaurants+1) for i in range(n_neighbourhoods+n_restaurants)]
-vehicles=1
 
 
 
@@ -88,38 +87,49 @@ def firstFit(weight, n, c):
         final[i].insert(0,0)
     return final
 
-print(quantity)
-nodes_to_traverse=firstFit(quantity,n_neighbourhoods,vehiclecap)
+
+vehicleqty=[[] for i in range(n_vehicles)]
+curr=0
+for i in range(n_neighbourhoods):
+    curr=curr%n_vehicles
+    vehicleqty[curr].append(quantity[i])
+    curr+=1
+nodes_to_traverse=[]
+#print(vehicleqty)
+for i in range(n_vehicles):
+    nodes_to_traverse.append(firstFit(vehicleqty[i],len(vehicleqty[i]),vehiclecap[i]))
+print(nodes_to_traverse)
 
 #print(nodes_to_traverse)
 #-------------------------------------------------------------------------------------------------
 paths=[]
 for k in range(len(nodes_to_traverse)):
-    # Use list comprehensions to extract the submatrix
-    result_matrix = [[distanceMat[i][j] for j in nodes_to_traverse[k]] for i in nodes_to_traverse[k]]
-    #print(result_matrix)
-    total_cost,tour=tsp(result_matrix)
-    #print(tour)
-    final=[]
-    for i in tour:
-        if(i<n_restaurants):
-            final.append('r'+str(i))
-        else:
-            final.append('n'+str(nodes_to_traverse[k][i]-1))
-    paths.append(final)
-#print(paths)
+    for l in range(len(nodes_to_traverse[k])):
+        # Use list comprehensions to extract the submatrix
+        result_matrix = [[distanceMat[i][j] for j in nodes_to_traverse[k][l]] for i in nodes_to_traverse[k][l]]
+        #print(result_matrix)
+        total_cost,tour=tsp(result_matrix)
+        #print(tour)
+        final=[]
+        for i in tour:
+            if(i<n_restaurants):
+                final.append('r'+str(i))
+            else:
+                final.append('n'+str(nodes_to_traverse[k][l][i]-1))
+        paths.append(final)
+    #print(paths)
 
 
 
-result_json = {}
+    result_json = {}
 
-for i, path in enumerate(paths, start=1):
-    key = f"path{i}"
-    result_json[key] = path
+    for i, path in enumerate(paths, start=1):
+        key = f"path{i}"
+        result_json[key] = path
 
-result_dict = {"v0": result_json}
-result_json_string = json.dumps(result_dict, indent=2)
+    result_dict = {"v"+str(k): result_json}
+    result_json_string = json.dumps(result_dict, indent=2)
 
-file_name = "level1a_output.json"
+file_name = "level2a_output.json"
 with open(file_name, "w") as json_file:
     json_file.write(result_json_string)
