@@ -1,16 +1,21 @@
-
-# extracting data from json file 
-
 import pandas as pd
 import json
 
-with open('Student Handout/Input data/level0.json', 'r') as f:
+with open('Student Handout/Input data/level2a.json', 'r') as f:
   data = json.load(f)
+
 
 n_neighbourhoods=(data['n_neighbourhoods'])
 n_restaurants=(data['n_restaurants'])
+n_vehicles=0
+vehiclecap=[]
+for i in data["vehicles"]:
+    n_vehicles+=1
+    vehiclecap.append(data["vehicles"][i]["capacity"])
+print(vehiclecap)
 quantity=[0 for i in range(n_neighbourhoods)]
 distanceMat=[[0]*(n_neighbourhoods+n_restaurants+1) for i in range(n_neighbourhoods+n_restaurants)]
+vehicles=1
 
 
 
@@ -19,6 +24,7 @@ for i in range(n_restaurants):
 for i in range(n_neighbourhoods):
     quantity[i]=data['neighbourhoods']['n'+str(i)]['order_quantity']
     distanceMat[i+n_restaurants]=[distanceMat[0][i+n_restaurants]]+data['neighbourhoods']['n'+str(i)]['distances']
+
 
 def tsp(graph):
     num_nodes = len(graph)
@@ -61,34 +67,59 @@ def tsp(graph):
 
 
 
-min_cost, min_path = tsp(distanceMat)
+def firstFit(weight, n, c):
+    final=[]
+    res = 0
+    bin_rem = [0]*n
 
-print("Minimum Cost:", min_cost)
-print("Minimum Path:", min_path)
+    for i in range(n):
+        j = 0
+        while( j < res):
+            if (bin_rem[j] >= weight[i]):
+                bin_rem[j] = bin_rem[j] - weight[i]
+                final[j].append(i+1)
+                break
+            j+=1
+        if (j == res):
+            bin_rem[res] = c - weight[i]
+            final.append([i+1])
+            res= res+1
+    for i in range(res):
+        final[i].insert(0,0)
+    return final
 
-final=[]
-for i in min_path:
-    if(i<n_restaurants):
-        final.append('r'+str(i))
-    else:
-        final.append('n'+str(i-1))
+print(quantity)
+nodes_to_traverse=firstFit(quantity,n_neighbourhoods,vehiclecap)
+
+#print(nodes_to_traverse)
+#-------------------------------------------------------------------------------------------------
+paths=[]
+for k in range(len(nodes_to_traverse)):
+    # Use list comprehensions to extract the submatrix
+    result_matrix = [[distanceMat[i][j] for j in nodes_to_traverse[k]] for i in nodes_to_traverse[k]]
+    #print(result_matrix)
+    total_cost,tour=tsp(result_matrix)
+    #print(tour)
+    final=[]
+    for i in tour:
+        if(i<n_restaurants):
+            final.append('r'+str(i))
+        else:
+            final.append('n'+str(nodes_to_traverse[k][i]-1))
+    paths.append(final)
+#print(paths)
 
 
-def convert_to_json(node_list):
-    if not node_list:
-        return None
 
-    start_node = node_list[0]
-    end_node = node_list[-1]
+result_json = {}
 
-    json_data = {
-        f"v0": {
-            "path": node_list
-        }
-    }
+for i, path in enumerate(paths, start=1):
+    key = f"path{i}"
+    result_json[key] = path
 
-    with open("level0_output.json", "w") as json_file:
-        json.dump(json_data, json_file, indent=2)
+result_dict = {"v0": result_json}
+result_json_string = json.dumps(result_dict, indent=2)
 
-convert_to_json(final)
-
+file_name = "level1a_output.json"
+with open(file_name, "w") as json_file:
+    json_file.write(result_json_string)
