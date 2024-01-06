@@ -1,7 +1,7 @@
 import pandas as pd
 import json
 
-with open('Student Handout/Input data/level1a.json', 'r') as f:
+with open('Student Handout/Input data/level1b.json', 'r') as f:
   data = json.load(f)
 
 
@@ -62,7 +62,7 @@ def firstFit(weight, n, c):
     return final
 
 print(quantity)
-nodes_to_traverse=firstFit(quantity,20,600)
+nodes_to_traverse=firstFit(quantity,n_neighbourhoods,vehiclecap)
 
 #print(nodes_to_traverse)
 #-------------------------------------------------------------------------------------------------
@@ -93,7 +93,7 @@ for i, path in enumerate(paths, start=1):
 result_dict = {"v0": result_json}
 result_json_string = json.dumps(result_dict, indent=2)
 
-file_name = "level1a_output.json"
+file_name = "level1b_output.json"
 with open(file_name, "w") as json_file:
     json_file.write(result_json_string)
 
