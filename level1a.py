@@ -4,9 +4,6 @@ import json
 with open('Student Handout/Input data/level1a.json', 'r') as f:
   data = json.load(f)
 
-# bin packing
-from ortools.linear_solver import pywraplp
-
 
 n_neighbourhoods=(data['n_neighbourhoods'])
 n_restaurants=(data['n_restaurants'])
@@ -23,6 +20,26 @@ for i in range(n_neighbourhoods):
     distanceMat[i+n_restaurants]=[distanceMat[0][i+n_restaurants]]+data['neighbourhoods']['n'+str(i)]['distances']
 
 
+def tsp_nearest_neighbor_with_cost(matrix):
+    num_nodes = len(matrix)
+    unvisited_nodes = set(range(1, num_nodes))
+    current_node = 0  # Start from node 0
+    tour = [current_node]
+
+    total_cost = 0
+
+    while unvisited_nodes:
+        nearest_node = min(unvisited_nodes, key=lambda node: matrix[current_node][node])
+        total_cost += matrix[current_node][nearest_node]
+        tour.append(nearest_node)
+        unvisited_nodes.remove(nearest_node)
+        current_node = nearest_node
+
+    # Return to the starting node to complete the tour
+    tour.append(tour[0])
+    return tour,total_cost
+
+
 def firstFit(weight, n, c):
     final=[]
     res = 0
@@ -33,17 +50,60 @@ def firstFit(weight, n, c):
         while( j < res):
             if (bin_rem[j] >= weight[i]):
                 bin_rem[j] = bin_rem[j] - weight[i]
-                final[j].append(i)
+                final[j].append(i+1)
                 break
             j+=1
         if (j == res):
             bin_rem[res] = c - weight[i]
-            final.append([i])
+            final.append([i+1])
             res= res+1
+    for i in range(res):
+        final[i].insert(0,0)
     return final
-     
+
+print(quantity)
 nodes_to_traverse=firstFit(quantity,20,600)
-print(nodes_to_traverse)
+
+#print(nodes_to_traverse)
+#-------------------------------------------------------------------------------------------------
+paths=[]
+for k in range(len(nodes_to_traverse)):
+    # Use list comprehensions to extract the submatrix
+    result_matrix = [[distanceMat[i][j] for j in nodes_to_traverse[k]] for i in nodes_to_traverse[k]]
+    #print(result_matrix)
+    tour,total_cost=tsp_nearest_neighbor_with_cost(result_matrix)
+    #print(tour)
+    final=[]
+    for i in tour:
+        if(i<n_restaurants):
+            final.append('r'+str(i))
+        else:
+            final.append('n'+str(nodes_to_traverse[k][i]-1))
+    paths.append(final)
+#print(paths)
+
+
+
+result_json = {}
+
+for i, path in enumerate(paths, start=1):
+    key = f"path{i}"
+    result_json[key] = path
+
+result_dict = {"v0": result_json}
+result_json_string = json.dumps(result_dict, indent=2)
+
+file_name = "level1a_output.json"
+with open(file_name, "w") as json_file:
+    json_file.write(result_json_string)
+
+print(f"The JSON data has been saved to {file_name}.")
+
+        
+
+
+
+
 
 
 
